@@ -7,11 +7,12 @@ import { SegmentModePicker } from "./SegmentModePicker.js";
 interface Props {
   day: Day;
   colorIndex: number;
+  globalStartIndex: number;
   prevDay?: Day;
   nextDay?: Day;
 }
 
-export function DayPlan({ day, colorIndex, prevDay, nextDay }: Props) {
+export function DayPlan({ day, colorIndex, globalStartIndex, prevDay, nextDay }: Props) {
   const removePlace = useTravelStore((s) => s.removePlace);
 
   const prevLast = prevDay?.places.at(-1);
@@ -49,7 +50,7 @@ export function DayPlan({ day, colorIndex, prevDay, nextDay }: Props) {
               <PlaceCard
                 place={place}
                 dayId={day.id}
-                index={i}
+                index={globalStartIndex + i}
                 dayColorIndex={colorIndex}
                 onRemove={(id) => removePlace(day.id, id)}
               />

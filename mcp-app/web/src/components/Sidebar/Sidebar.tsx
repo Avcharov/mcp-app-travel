@@ -171,6 +171,7 @@ export function Sidebar() {
             <DayPlan
               day={activeDay}
               colorIndex={activeDayIndex}
+              globalStartIndex={days.slice(0, activeDayIndex).reduce((sum, d) => sum + d.places.length, 0)}
               prevDay={activeDayIndex > 0 ? days[activeDayIndex - 1] : undefined}
               nextDay={activeDayIndex < days.length - 1 ? days[activeDayIndex + 1] : undefined}
             />

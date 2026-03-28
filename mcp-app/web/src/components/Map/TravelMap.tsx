@@ -235,8 +235,6 @@ export function TravelMap({ apiKey }: Props) {
         {/* Markers */}
         {allPlaces.map((place, globalIndex) => {
           const color = DAY_COLORS[place.dayIndex % DAY_COLORS.length];
-          const dayOrder =
-            days[place.dayIndex].places.findIndex((p) => p.placeId === place.placeId) + 1;
           return (
             <AdvancedMarker
               key={`${place.placeId}-${globalIndex}`}
@@ -247,7 +245,7 @@ export function TravelMap({ apiKey }: Props) {
                 background={color}
                 borderColor={color}
                 glyphColor="#fff"
-                glyph={String(dayOrder)}
+                glyph={String(globalIndex + 1)}
               />
             </AdvancedMarker>
           );
