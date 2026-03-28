@@ -3,6 +3,43 @@ import { z } from "zod";
 
 const PYTHON_SERVICE_URL = process.env.PYTHON_SERVICE_URL ?? "http://localhost:8000";
 const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY ?? "";
+const USE_MOCK = process.env.USE_MOCK === "true" || true; // flip to false when Python service is ready
+
+// ─── Mock data ───────────────────────────────────────────────────────────────
+const MOCK_PLACES: Record<string, Array<{ placeId: string; name: string; address: string; lat: number; lng: number; rating: number; photoUrl: string }>> = {
+  default: [
+    { placeId: "p1", name: "Sagrada Família", address: "C/ de Mallorca, 401, Barcelona", lat: 41.4036, lng: 2.1744, rating: 4.8, photoUrl: "" },
+    { placeId: "p2", name: "Park Güell", address: "C/ d'Olot, Barcelona", lat: 41.4145, lng: 2.1527, rating: 4.7, photoUrl: "" },
+    { placeId: "p3", name: "La Barceloneta Beach", address: "Barceloneta, Barcelona", lat: 41.3808, lng: 2.1898, rating: 4.5, photoUrl: "" },
+    { placeId: "p4", name: "Gothic Quarter", address: "Barri Gòtic, Barcelona", lat: 41.3833, lng: 2.1762, rating: 4.6, photoUrl: "" },
+    { placeId: "p5", name: "Camp Nou", address: "C/ d'Arístides Maillol, Barcelona", lat: 41.3809, lng: 2.1228, rating: 4.6, photoUrl: "" },
+  ],
+  paris: [
+    { placeId: "pp1", name: "Eiffel Tower", address: "Champ de Mars, 5 Av. Anatole France, Paris", lat: 48.8584, lng: 2.2945, rating: 4.7, photoUrl: "" },
+    { placeId: "pp2", name: "Louvre Museum", address: "Rue de Rivoli, Paris", lat: 48.8606, lng: 2.3376, rating: 4.8, photoUrl: "" },
+    { placeId: "pp3", name: "Notre-Dame Cathedral", address: "6 Parvis Notre-Dame, Paris", lat: 48.8530, lng: 2.3499, rating: 4.7, photoUrl: "" },
+    { placeId: "pp4", name: "Montmartre", address: "Montmartre, Paris", lat: 48.8867, lng: 2.3431, rating: 4.6, photoUrl: "" },
+    { placeId: "pp5", name: "Palace of Versailles", address: "Place d'Armes, Versailles", lat: 48.8049, lng: 2.1204, rating: 4.8, photoUrl: "" },
+  ],
+  rome: [
+    { placeId: "pr1", name: "Colosseum", address: "Piazza del Colosseo, Rome", lat: 41.8902, lng: 12.4922, rating: 4.8, photoUrl: "" },
+    { placeId: "pr2", name: "Vatican Museums", address: "Viale Vaticano, Rome", lat: 41.9065, lng: 12.4536, rating: 4.7, photoUrl: "" },
+    { placeId: "pr3", name: "Trevi Fountain", address: "Piazza di Trevi, Rome", lat: 41.9009, lng: 12.4833, rating: 4.7, photoUrl: "" },
+    { placeId: "pr4", name: "Pantheon", address: "Piazza della Rotonda, Rome", lat: 41.8986, lng: 12.4769, rating: 4.7, photoUrl: "" },
+    { placeId: "pr5", name: "Borghese Gallery", address: "Piazzale Scipione Borghese, Rome", lat: 41.9143, lng: 12.4927, rating: 4.7, photoUrl: "" },
+  ],
+};
+
+function getMockPlaces(query: string) {
+  const q = query.toLowerCase();
+  if (q.includes("paris") || q.includes("france")) return MOCK_PLACES.paris;
+  if (q.includes("rome") || q.includes("italy") || q.includes("roman")) return MOCK_PLACES.rome;
+  // filter default Barcelona set by keyword, or return all
+  const filtered = MOCK_PLACES.default.filter(p =>
+    p.name.toLowerCase().includes(q) || p.address.toLowerCase().includes(q),
+  );
+  return filtered.length > 0 ? filtered : MOCK_PLACES.default;
+}
 
 const server = new McpServer(
   { name: "travel-planner", version: "0.0.1" },
@@ -74,6 +111,13 @@ const server = new McpServer(
       annotations: { readOnlyHint: true },
     },
     async ({ query }) => {
+      if (USE_MOCK) {
+        const places = getMockPlaces(query);
+        return {
+          structuredContent: { places },
+          content: [{ type: "text", text: `[MOCK] Found ${places.length} places for "${query}".` }],
+        };
+      }
       try {
         const url = `${PYTHON_SERVICE_URL}/search?query=${encodeURIComponent(query)}`;
         const res = await fetch(url);
