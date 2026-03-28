@@ -96,9 +96,11 @@ interface Props {
 export function TravelMap({ apiKey }: Props) {
   const days = useTravelStore((s) => s.days);
   const transportMode = useTravelStore((s) => s.transportMode);
+  const segmentModes = useTravelStore((s) => s.segmentModes);
   const routes = useTravelStore((s) => s.routes);
   const routeVersion = useTravelStore((s) => s.routeVersion);
   const upsertRoute = useTravelStore((s) => s.upsertRoute);
+  const setRoutes = useTravelStore((s) => s.setRoutes);
   const { callToolAsync } = useCallTool("get-directions");
 
   // Stabilize callToolAsync via ref to avoid dependency issues
@@ -123,6 +125,14 @@ export function TravelMap({ apiKey }: Props) {
 
     const pairs = [...withinDayPairs, ...crossDayPairs];
 
+    // Prune stale routes whose from→to no longer matches the current pairs
+    const validKeys = new Set(pairs.map(({ from, to }) => `${from.placeId}::${to.placeId}`));
+    const currentRoutes = useTravelStore.getState().routes;
+    const freshRoutes = currentRoutes.filter((r) => validKeys.has(`${r.from}::${r.to}`));
+    if (freshRoutes.length !== currentRoutes.length) {
+      setRoutes(freshRoutes);
+    }
+
     if (pairs.length === 0) return;
 
     let cancelled = false;
@@ -131,12 +141,12 @@ export function TravelMap({ apiKey }: Props) {
       for (const { from, to } of pairs) {
         if (cancelled) break;
         try {
+          const segmentKey = `${from.placeId}::${to.placeId}`;
+          const mode = segmentModes[segmentKey] ?? transportMode;
           const result = await callToolRef.current({
-            originLat: from.lat,
-            originLng: from.lng,
-            destinationLat: to.lat,
-            destinationLng: to.lng,
-            mode: transportMode,
+            originPlaceId: from.placeId,
+            destinationPlaceId: to.placeId,
+            mode,
           });
           if (cancelled) break;
           const content = result.structuredContent as {
@@ -148,7 +158,7 @@ export function TravelMap({ apiKey }: Props) {
             const route: Route = {
               from: from.placeId,
               to: to.placeId,
-              mode: transportMode,
+              mode,
               polyline: content.polyline,
               duration: content.duration ?? "",
               distance: content.distance ?? "",

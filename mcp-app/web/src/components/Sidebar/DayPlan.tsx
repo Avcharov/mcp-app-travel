@@ -2,14 +2,22 @@ import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable"
 import type { Day } from "@/types.js";
 import { useTravelStore } from "@/store/travelStore.js";
 import { PlaceCard } from "./PlaceCard.js";
+import { SegmentModePicker } from "./SegmentModePicker.js";
 
 interface Props {
   day: Day;
   colorIndex: number;
+  prevDay?: Day;
+  nextDay?: Day;
 }
 
-export function DayPlan({ day, colorIndex }: Props) {
+export function DayPlan({ day, colorIndex, prevDay, nextDay }: Props) {
   const removePlace = useTravelStore((s) => s.removePlace);
+
+  const prevLast = prevDay?.places.at(-1);
+  const firstPlace = day.places[0];
+  const lastPlace = day.places.at(-1);
+  const nextFirst = nextDay?.places[0];
 
   return (
     <div
@@ -17,6 +25,16 @@ export function DayPlan({ day, colorIndex }: Props) {
       data-llm={`${day.label}: ${day.places.map((p) => p.name).join(", ") || "no places"}`}
     >
       {/* Places list */}
+      {/* Incoming connection from previous day */}
+      {prevLast && firstPlace && (
+        <div style={{ padding: "0 4px 4px", opacity: 0.85 }}>
+          <div style={{ fontSize: "10px", color: "var(--color-text-secondary)", marginBottom: "2px", textAlign: "center" }}>
+            From {prevDay!.label}: {prevLast.name}
+          </div>
+          <SegmentModePicker fromPlaceId={prevLast.placeId} toPlaceId={firstPlace.placeId} />
+        </div>
+      )}
+
       <div
         style={{
           minHeight: "40px",
@@ -27,17 +45,36 @@ export function DayPlan({ day, colorIndex }: Props) {
           strategy={verticalListSortingStrategy}
         >
           {day.places.map((place, i) => (
-            <PlaceCard
-              key={place.placeId}
-              place={place}
-              dayId={day.id}
-              index={i}
-              dayColorIndex={colorIndex}
-              onRemove={(id) => removePlace(day.id, id)}
-            />
+            <div key={place.placeId}>
+              <PlaceCard
+                place={place}
+                dayId={day.id}
+                index={i}
+                dayColorIndex={colorIndex}
+                onRemove={(id) => removePlace(day.id, id)}
+              />
+              {i < day.places.length - 1 && (
+                <SegmentModePicker
+                  fromPlaceId={place.placeId}
+                  toPlaceId={day.places[i + 1].placeId}
+                />
+              )}
+            </div>
           ))}
         </SortableContext>
-        {day.places.length === 0 && (
+      </div>
+
+      {/* Outgoing connection to next day */}
+      {lastPlace && nextFirst && (
+        <div style={{ padding: "4px 4px 0", opacity: 0.85 }}>
+          <SegmentModePicker fromPlaceId={lastPlace.placeId} toPlaceId={nextFirst.placeId} />
+          <div style={{ fontSize: "10px", color: "var(--color-text-secondary)", marginTop: "2px", textAlign: "center" }}>
+            To {nextDay!.label}: {nextFirst.name}
+          </div>
+        </div>
+      )}
+
+      {day.places.length === 0 && (
           <div
             style={{
               padding: "20px 8px",
@@ -54,7 +91,6 @@ export function DayPlan({ day, colorIndex }: Props) {
             <div style={{ opacity: 0.7 }}>Use the search bar above to find and add places</div>
           </div>
         )}
-      </div>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-export type TransportMode = "driving" | "transit" | "walking";
+export type TransportMode = "DRIVE" | "BICYCLE" | "WALK" | "TWO_WHEELER" | "TRANSIT";
 
 export interface LatLng {
   lat: number;

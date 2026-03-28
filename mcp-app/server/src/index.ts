@@ -3,7 +3,7 @@ import { z } from "zod";
 
 const PYTHON_SERVICE_URL = process.env.PYTHON_SERVICE_URL ?? "http://localhost:8080";
 const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY ?? "";
-const USE_MOCK = process.env.USE_MOCK === "true" || true; // flip to false when Python service is ready
+const USE_MOCK = process.env.USE_MOCK === "true" || false; // flip to false when Python service is ready
 
 // ─── Mock data ───────────────────────────────────────────────────────────────
 const MOCK_PLACES: Record<string, Array<{ placeId: string; name: string; address: string; lat: number; lng: number }>> = {
@@ -75,7 +75,7 @@ function getMockDirections(
       Math.sin(dLng / 2) ** 2;
   const distKm = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
-  const speeds: Record<string, number> = { walking: 5, transit: 30, driving: 50 };
+  const speeds: Record<string, number> = { WALK: 5, BICYCLE: 15, TRANSIT: 30, DRIVE: 50, TWO_WHEELER: 40 };
   const durationMin = Math.round((distKm / (speeds[mode] ?? 30)) * 60);
 
   return {
@@ -197,38 +197,57 @@ const server = new McpServer(
     "get-directions",
     {
       description:
-        "Get directions and route polyline between two coordinates for a given transport mode.",
+        "Get directions and route polyline between two places for a given transport mode. Use place IDs returned by search-places.",
       inputSchema: {
-        originLat: z.number().describe("Origin latitude."),
-        originLng: z.number().describe("Origin longitude."),
-        destinationLat: z.number().describe("Destination latitude."),
-        destinationLng: z.number().describe("Destination longitude."),
+        originPlaceId: z.string().describe("Place ID of the origin (from search-places)."),
+        destinationPlaceId: z.string().describe("Place ID of the destination (from search-places)."),
         mode: z
-          .enum(["driving", "transit", "walking"])
-          .describe("Transport mode."),
+          .enum(["DRIVE", "BICYCLE", "WALK", "TWO_WHEELER", "TRANSIT"])
+          .describe("Transport mode (RouteTravelMode): DRIVE, BICYCLE, WALK, TWO_WHEELER, TRANSIT."),
       },
       annotations: { readOnlyHint: true },
     },
-    async ({ originLat, originLng, destinationLat, destinationLng, mode }) => {
+    async ({ originPlaceId, destinationPlaceId, mode }) => {
       if (USE_MOCK) {
-        const data = getMockDirections(originLat, originLng, destinationLat, destinationLng, mode);
+        const allPlaces = Object.values(MOCK_PLACES).flat();
+        const origin = allPlaces.find(p => p.placeId === originPlaceId);
+        const destination = allPlaces.find(p => p.placeId === destinationPlaceId);
+        if (!origin || !destination) {
+          return {
+            content: [{ type: "text", text: `[MOCK] Place ID not found in mock data.` }],
+            isError: true,
+          };
+        }
+        const data = getMockDirections(origin.lat, origin.lng, destination.lat, destination.lng, mode);
         return {
           structuredContent: data,
           content: [{ type: "text", text: `[MOCK] Route: ${data.distance}, ~${data.duration}.` }],
         };
       }
       try {
-        const res = await fetch(`${PYTHON_SERVICE_URL}/directions`, {
+        const res = await fetch(`${PYTHON_SERVICE_URL}/places/compute_route/`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            origin: { lat: originLat, lng: originLng },
-            destination: { lat: destinationLat, lng: destinationLng },
-            mode,
+            origin_place_id: originPlaceId,
+            destination_place_id: destinationPlaceId,
+            travel_mode: mode,
           }),
         });
         if (!res.ok) throw new Error(`Python service error: ${res.status}`);
-        const data = await res.json() as { polyline: string; duration: string; distance: string };
+        const raw = await res.json() as Array<Record<string, unknown>>;
+        const route = (Array.isArray(raw) ? raw[0] : raw) as Record<string, unknown>;
+        // polyline comes as { encodedPolyline: "..." }
+        const polylineRaw = route.polyline as Record<string, unknown> | string | undefined;
+        const polyline = typeof polylineRaw === "string"
+          ? polylineRaw
+          : (polylineRaw?.encodedPolyline as string ?? "");
+        // distance/duration may come as objects like { text: "1.2 km", value: 1200 }
+        const distRaw = route.distance as Record<string, unknown> | string | undefined;
+        const distance = typeof distRaw === "string" ? distRaw : (distRaw?.text as string ?? "");
+        const durRaw = route.duration as Record<string, unknown> | string | undefined;
+        const duration = typeof durRaw === "string" ? durRaw : (durRaw?.text as string ?? "");
+        const data = { polyline, distance, duration };
         return {
           structuredContent: data,
           content: [{ type: "text", text: `Route: ${data.distance}, ~${data.duration}.` }],

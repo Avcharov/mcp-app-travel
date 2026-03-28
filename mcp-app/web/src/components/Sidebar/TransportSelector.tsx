@@ -2,9 +2,11 @@ import type { TransportMode } from "@/types.js";
 import { useTravelStore } from "@/store/travelStore.js";
 
 const MODES: { mode: TransportMode; label: string; icon: string }[] = [
-  { mode: "walking", label: "Walk", icon: "🚶" },
-  { mode: "transit", label: "Transit", icon: "🚌" },
-  { mode: "driving", label: "Drive", icon: "🚗" },
+  { mode: "WALK", label: "Walk", icon: "🚶" },
+  { mode: "BICYCLE", label: "Bicycle", icon: "🚲" },
+  { mode: "TRANSIT", label: "Transit", icon: "🚌" },
+  { mode: "DRIVE", label: "Drive", icon: "🚗" },
+  { mode: "TWO_WHEELER", label: "Moto", icon: "🛵" },
 ];
 
 export function TransportSelector() {

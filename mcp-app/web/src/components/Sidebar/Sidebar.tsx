@@ -168,7 +168,12 @@ export function Sidebar() {
       <div style={{ flex: 1, overflowY: "auto" }}>
         {activeDay ? (
           <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-            <DayPlan day={activeDay} colorIndex={activeDayIndex} />
+            <DayPlan
+              day={activeDay}
+              colorIndex={activeDayIndex}
+              prevDay={activeDayIndex > 0 ? days[activeDayIndex - 1] : undefined}
+              nextDay={activeDayIndex < days.length - 1 ? days[activeDayIndex + 1] : undefined}
+            />
           </DndContext>
         ) : (
           <div style={{ padding: "24px", textAlign: "center", color: "var(--color-text-secondary)", fontSize: "13px" }}>

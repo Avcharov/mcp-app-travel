@@ -5,6 +5,8 @@ type TravelState = {
   days: Day[];
   activeDayId: string | null;
   transportMode: TransportMode;
+  /** Per-segment mode overrides. Key = "fromPlaceId::toPlaceId" */
+  segmentModes: Record<string, TransportMode>;
   routes: Route[];
   /** Incremented whenever routes need re-fetching (reorder, mode change, cross-day move) */
   routeVersion: number;
@@ -20,6 +22,7 @@ type TravelState = {
   reorderPlaces: (dayId: string, fromIndex: number, toIndex: number) => void;
   movePlaceBetweenDays: (fromDayId: string, toDayId: string, placeId: string, toIndex: number) => void;
   setTransportMode: (mode: TransportMode) => void;
+  setSegmentMode: (fromPlaceId: string, toPlaceId: string, mode: TransportMode) => void;
   setRoutes: (routes: Route[]) => void;
   upsertRoute: (route: Route) => void;
   invalidateRoutes: () => void;
@@ -31,7 +34,8 @@ const initialDay: Day = { id: "day-1", label: "Day 1", places: [] };
 export const useTravelStore = createStore<TravelState>((set) => ({
   days: [initialDay],
   activeDayId: "day-1",
-  transportMode: "walking",
+  transportMode: "DRIVE",
+  segmentModes: {},
   routes: [],
   routeVersion: 0,
   lastAddedPlace: null,
@@ -45,12 +49,19 @@ export const useTravelStore = createStore<TravelState>((set) => ({
 
   removeDay: (dayId) =>
     set((s) => {
+      const removed = s.days.find((d) => d.id === dayId);
+      const removedPlaceIds = new Set(removed?.places.map((p) => p.placeId) ?? []);
       const filtered = s.days.filter((d) => d.id !== dayId);
       // Re-label all days sequentially so gaps are closed (Day 1, Day 2, …)
       const days = filtered.map((d, i) => ({ ...d, label: `Day ${i + 1}` }));
       const activeDayId =
         s.activeDayId === dayId ? (days[0]?.id ?? null) : s.activeDayId;
-      return { days, activeDayId };
+      return {
+        days,
+        activeDayId,
+        routes: s.routes.filter((r) => !removedPlaceIds.has(r.from) && !removedPlaceIds.has(r.to)),
+        routeVersion: s.routeVersion + 1,
+      };
     }),
 
   setActiveDay: (dayId) => set(() => ({ activeDayId: dayId })),
@@ -84,6 +95,7 @@ export const useTravelStore = createStore<TravelState>((set) => ({
         places.splice(toIndex, 0, moved);
         return { ...d, places };
       }),
+      routes: [],
       routeVersion: s.routeVersion + 1,
     })),
 
@@ -111,7 +123,14 @@ export const useTravelStore = createStore<TravelState>((set) => ({
   setTransportMode: (mode) =>
     set((s) => ({
       transportMode: mode,
-      // Keep stale routes visible until new ones arrive — just bump version to trigger re-fetch
+      segmentModes: {},
+      routeVersion: s.routeVersion + 1,
+    })),
+
+  setSegmentMode: (fromPlaceId, toPlaceId, mode) =>
+    set((s) => ({
+      segmentModes: { ...s.segmentModes, [`${fromPlaceId}::${toPlaceId}`]: mode },
+      routes: s.routes.filter((r) => !(r.from === fromPlaceId && r.to === toPlaceId)),
       routeVersion: s.routeVersion + 1,
     })),
 

@@ -42,9 +42,11 @@ function decodePolyline(encoded: string): Array<{ lat: number; lng: number }> {
 }
 
 const MODE_COLORS: Record<string, string> = {
-  driving: "#1a73e8",
-  transit: "#1e8e3e",
-  walking: "#e8710a",
+  DRIVE: "#1a73e8",
+  BICYCLE: "#f4a800",
+  TRANSIT: "#1e8e3e",
+  WALK: "#e8710a",
+  TWO_WHEELER: "#9c27b0",
 };
 
 export function RoutePolyline({ route }: Props) {
