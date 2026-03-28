@@ -6,6 +6,7 @@ import {
   useSensors,
   type DragEndEvent,
 } from "@dnd-kit/core";
+import { useDisplayMode } from "skybridge/web";
 
 import { useTravelStore } from "@/store/travelStore.js";
 import { SearchBar } from "./SearchBar.js";
@@ -22,6 +23,9 @@ export function Sidebar() {
   const removeDay = useTravelStore((s) => s.removeDay);
   const setActiveDay = useTravelStore((s) => s.setActiveDay);
   const reorderPlaces = useTravelStore((s) => s.reorderPlaces);
+
+  const [displayMode, setDisplayMode] = useDisplayMode();
+  const isFullscreen = displayMode === "fullscreen";
 
   const [searchResults, setSearchResults] = useState<Place[]>([]);
 
@@ -70,11 +74,49 @@ export function Sidebar() {
           padding: "14px 14px 10px",
           borderBottom: "1px solid var(--color-border)",
           flexShrink: 0,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
         }}
       >
         <span style={{ fontWeight: 700, fontSize: "15px", color: "var(--color-text)" }}>
           Travel Planner
         </span>
+        <button
+          onClick={() => setDisplayMode(isFullscreen ? "inline" : "fullscreen")}
+          title={isFullscreen ? "Collapse to inline" : "Expand to fullscreen"}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: 28,
+            height: 28,
+            borderRadius: "var(--radius-sm)",
+            color: "var(--color-text-secondary)",
+            flexShrink: 0,
+            transition: "background 0.15s, color 0.15s",
+          }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLButtonElement).style.background = "var(--color-bg-secondary)";
+            (e.currentTarget as HTMLButtonElement).style.color = "var(--color-text)";
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLButtonElement).style.background = "none";
+            (e.currentTarget as HTMLButtonElement).style.color = "var(--color-text-secondary)";
+          }}
+        >
+          {isFullscreen ? (
+            /* Collapse / shrink icon */
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M5.5 1v4.5H1M10.5 1v4.5H15M5.5 15v-4.5H1M10.5 15v-4.5H15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          ) : (
+            /* Expand / fullscreen icon */
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M1 5.5V1h4.5M15 5.5V1h-4.5M1 10.5V15h4.5M15 10.5V15h-4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          )}
+        </button>
       </div>
 
       {/* Day pills */}

@@ -139,24 +139,23 @@ const server = new McpServer(
           .describe("Number of days to plan for. Defaults to 1."),
         places: z
           .array(z.array(z.string()))
-          .optional()
           .describe(
-            "Optional. Places to visit per day. Outer array = days, inner array = place names for that day. " +
+            "Places to visit per day. Outer array = days, inner array = place names for that day. " +
             'Example: [["Eiffel Tower","Louvre Museum"],["Versailles","Montmartre"]]. ' +
-            "Each name will be resolved via search. If provided, its length overrides `days`. " +
-            "Only include this when the user specified concrete places or preferences — the LLM should look up place names before passing them here."
+            "Each name will be resolved via search. Its length overrides `days`. " +
+            "If the user has no specific preferences or context, pass an empty array []."
           ),
       },
       annotations: { readOnlyHint: true },
     },
     async ({ days, places }) => {
-      const dayCount = places ? places.length : (days ?? 1);
+      const dayCount = places.length > 0 ? places.length : (days ?? 1);
       return {
-        structuredContent: { days: dayCount, places: places ?? null },
+        structuredContent: { days: dayCount, places: places.length > 0 ? places : null },
         content: [
           {
             type: "text",
-            text: `Opening travel planner for ${dayCount} day${dayCount > 1 ? "s" : ""}${places ? ` with ${places.flat().length} places to resolve.` : "."}`,
+            text: `Opening travel planner for ${dayCount} day${dayCount > 1 ? "s" : ""}${places.length > 0 ? ` with ${places.flat().length} places to resolve.` : "."}`,
           },
         ],
         _meta: {
