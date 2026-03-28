@@ -107,12 +107,21 @@ export function TravelMap({ apiKey }: Props) {
 
   // Centralized route fetching — runs when routeVersion changes
   useEffect(() => {
-    const pairs = days.flatMap((day) =>
+    const withinDayPairs = days.flatMap((day) =>
       day.places.slice(0, -1).map((place, i) => ({
         from: place,
         to: day.places[i + 1],
       })),
     );
+
+    const crossDayPairs = days.slice(0, -1).flatMap((day, i) => {
+      const lastPlace = day.places[day.places.length - 1];
+      const firstNextPlace = days[i + 1]?.places[0];
+      if (!lastPlace || !firstNextPlace) return [];
+      return [{ from: lastPlace, to: firstNextPlace }];
+    });
+
+    const pairs = [...withinDayPairs, ...crossDayPairs];
 
     if (pairs.length === 0) return;
 

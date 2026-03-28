@@ -3,7 +3,7 @@ import { z } from "zod";
 
 const PYTHON_SERVICE_URL = process.env.PYTHON_SERVICE_URL ?? "http://localhost:8080";
 const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY ?? "";
-const USE_MOCK = process.env.USE_MOCK === "true" || false; // flip to false when Python service is ready
+const USE_MOCK = process.env.USE_MOCK === "true" || true; // flip to false when Python service is ready
 
 // ─── Mock data ───────────────────────────────────────────────────────────────
 const MOCK_PLACES: Record<string, Array<{ placeId: string; name: string; address: string; lat: number; lng: number }>> = {
@@ -29,6 +29,61 @@ const MOCK_PLACES: Record<string, Array<{ placeId: string; name: string; address
     { placeId: "pr5", name: "Borghese Gallery", address: "Piazzale Scipione Borghese, Rome", lat: 41.9143, lng: 12.4927 },
   ],
 };
+
+// ─── Mock directions helpers ──────────────────────────────────────────────────
+function encodePolyline(points: Array<[number, number]>): string {
+  let output = "";
+  let prevLat = 0, prevLng = 0;
+  for (const [lat, lng] of points) {
+    const dLat = Math.round(lat * 1e5) - Math.round(prevLat * 1e5);
+    const dLng = Math.round(lng * 1e5) - Math.round(prevLng * 1e5);
+    prevLat = lat;
+    prevLng = lng;
+    for (const v of [dLat, dLng]) {
+      let n = v < 0 ? ~(v << 1) : v << 1;
+      while (n >= 0x20) {
+        output += String.fromCharCode((0x20 | (n & 0x1f)) + 63);
+        n >>= 5;
+      }
+      output += String.fromCharCode(n + 63);
+    }
+  }
+  return output;
+}
+
+function getMockDirections(
+  originLat: number, originLng: number,
+  destinationLat: number, destinationLng: number,
+  mode: string,
+) {
+  const points: Array<[number, number]> = Array.from({ length: 5 }, (_, i) => {
+    const t = i / 4;
+    return [
+      originLat + (destinationLat - originLat) * t,
+      originLng + (destinationLng - originLng) * t,
+    ];
+  });
+  const polyline = encodePolyline(points);
+
+  const R = 6371;
+  const dLat = (destinationLat - originLat) * (Math.PI / 180);
+  const dLng = (destinationLng - originLng) * (Math.PI / 180);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(originLat * (Math.PI / 180)) *
+      Math.cos(destinationLat * (Math.PI / 180)) *
+      Math.sin(dLng / 2) ** 2;
+  const distKm = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  const speeds: Record<string, number> = { walking: 5, transit: 30, driving: 50 };
+  const durationMin = Math.round((distKm / (speeds[mode] ?? 30)) * 60);
+
+  return {
+    polyline,
+    distance: distKm < 1 ? `${Math.round(distKm * 1000)} m` : `${distKm.toFixed(1)} km`,
+    duration: durationMin < 60 ? `${durationMin} mins` : `${Math.floor(durationMin / 60)}h ${durationMin % 60}m`,
+  };
+}
 
 function getMockPlaces(query: string) {
   const q = query.toLowerCase();
@@ -155,6 +210,13 @@ const server = new McpServer(
       annotations: { readOnlyHint: true },
     },
     async ({ originLat, originLng, destinationLat, destinationLng, mode }) => {
+      if (USE_MOCK) {
+        const data = getMockDirections(originLat, originLng, destinationLat, destinationLng, mode);
+        return {
+          structuredContent: data,
+          content: [{ type: "text", text: `[MOCK] Route: ${data.distance}, ~${data.duration}.` }],
+        };
+      }
       try {
         const res = await fetch(`${PYTHON_SERVICE_URL}/directions`, {
           method: "POST",
