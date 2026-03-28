@@ -125,7 +125,10 @@ const server = new McpServer(
     },
     {
       description:
-        "Plan a multi-day trip. Use this whenever the user wants to plan, explore, or organise places to visit.",
+        "Plan a multi-day trip. Use this whenever the user wants to plan, explore, or organise places to visit. " +
+        "If the user mentions specific places, destinations, or preferences (e.g. 'museums in Paris', 'beaches in Barcelona'), " +
+        "the LLM should search for matching places first and pass the resolved names into the `places` parameter. " +
+        "If the user has no specific preferences, you can omit `places` and just provide `days`.",
       inputSchema: {
         days: z
           .number()
@@ -138,9 +141,10 @@ const server = new McpServer(
           .array(z.array(z.string()))
           .optional()
           .describe(
-            "Places to visit per day. Outer array = days, inner array = place names for that day. " +
+            "Optional. Places to visit per day. Outer array = days, inner array = place names for that day. " +
             'Example: [["Eiffel Tower","Louvre Museum"],["Versailles","Montmartre"]]. ' +
-            "Each name will be resolved via search. If provided, its length overrides `days`."
+            "Each name will be resolved via search. If provided, its length overrides `days`. " +
+            "Only include this when the user specified concrete places or preferences — the LLM should look up place names before passing them here."
           ),
       },
       annotations: { readOnlyHint: true },
@@ -167,7 +171,9 @@ const server = new McpServer(
     "search-places",
     {
       description:
-        "Search for places (attractions, restaurants, hotels, etc.) by text query. Returns a list of matching places with coordinates.",
+        "APP-ONLY — this tool is called by the app UI, not directly by the LLM. " +
+        "Search for places (attractions, restaurants, hotels, etc.) by text query. " +
+        "Returns a list of matching places with coordinates and place IDs.",
       inputSchema: {
         query: z.string().describe("Text search query, e.g. 'museums in Barcelona'."),
       },
@@ -205,7 +211,9 @@ const server = new McpServer(
     "get-directions",
     {
       description:
-        "Get directions and route polyline between two places for a given transport mode. Use place IDs returned by search-places.",
+        "APP-ONLY — this tool is called by the app UI, not directly by the LLM. " +
+        "Get directions and route polyline between two places for a given transport mode. " +
+        "Requires place IDs returned by search-places.",
       inputSchema: {
         originPlaceId: z.string().describe("Place ID of the origin (from search-places)."),
         destinationPlaceId: z.string().describe("Place ID of the destination (from search-places)."),
