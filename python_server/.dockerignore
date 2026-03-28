@@ -1,0 +1,11 @@
+.venv/
+.idea/
+__pycache__/
+
+.DS_Store
+.env.local
+.dockerignore
+.gitignore
+Dockerfile
+Makefile
+README.md

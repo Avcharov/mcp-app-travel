@@ -1,5 +1,5 @@
-IMAGE := borisplaton/hack-python-server
-IMAGE_TAG := 0.1
+IMAGE ?= borisplaton/hack-python-server
+IMAGE_TAG ?= 0.1
 
 
 run-dev:
@@ -8,5 +8,11 @@ run-dev:
 build:
 	@docker build -f Dockerfile -t $(IMAGE):$(IMAGE_TAG) .
 
+build-server:
+	@docker build -f Dockerfile --platform=linux/amd64 -t $(IMAGE):$(IMAGE_TAG) .
+
 run: build
 	@docker run --rm -p 8080:8080 --env-file .env.local $(IMAGE):$(IMAGE_TAG)
+
+push-image:
+	@docker push $(IMAGE):$(IMAGE_TAG)

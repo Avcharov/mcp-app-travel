@@ -25,7 +25,7 @@ async def compute_route(origin_destination: ComputeRouteRequestContract) -> list
     )
 
 
-@router.get("/predict")
+@router.get("/predict/")
 async def predict_places_by_images(files: list[UploadFile]) -> list[OriginDestinationRoute]:
     images = []
     for file in files:
