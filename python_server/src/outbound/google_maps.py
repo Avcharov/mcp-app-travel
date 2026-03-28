@@ -1,10 +1,9 @@
 from typing import Any
-from urllib.parse import urljoin
 
 from aiohttp import ClientResponse, ClientSession
 
 from infrastructure.http import HTTPSessionManager
-from infrastructure.settings import google_map_settings
+from infrastructure.settings import google_settings
 
 
 class GoogleMapsClient:
@@ -61,5 +60,5 @@ class GoogleMapsClient:
     @classmethod
     def build(cls) -> GoogleMapsClient:
         return GoogleMapsClient(
-            api_key=google_map_settings.API_TOKEN,
+            api_key=google_settings.API_TOKEN,
         )

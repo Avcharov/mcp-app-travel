@@ -1,5 +1,3 @@
-from pathlib import Path
-
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -9,7 +7,6 @@ class AppSettings(BaseSettings):
     LOG_LEVEL: str = "INFO"
     NAME: str = "python_server"
     DEBUG: bool = False
-    ROOT_DIR: str = str(Path(__file__).parent)
 
 
 class HTTPSettings(BaseSettings):
@@ -20,7 +17,7 @@ class HTTPSettings(BaseSettings):
     WORKERS: int = 2
 
 
-class GoogleMapSettings(BaseSettings):
+class GoogleSettings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix='GOOGLE_MAP_')
 
     API_TOKEN: str
@@ -28,4 +25,4 @@ class GoogleMapSettings(BaseSettings):
 
 app_settings = AppSettings()
 http_settings = HTTPSettings()
-google_map_settings = GoogleMapSettings()
+google_settings = GoogleSettings()

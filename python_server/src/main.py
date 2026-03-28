@@ -15,9 +15,9 @@ if __name__ == "__main__":
     uvicorn.run(
         'main:create_app',
         factory=True,
+        reload=app_settings.DEBUG,
         host=http_settings.HOST,
         port=http_settings.PORT,
         workers=http_settings.WORKERS,
-        reload_dirs=app_settings.ROOT_DIR,
         loop='uvloop',
     )
