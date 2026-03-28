@@ -7,6 +7,7 @@ import { useTravelStore } from "@/store/travelStore.js";
 import { AppLayout } from "@/components/Layout/AppLayout.js";
 import { Sidebar } from "@/components/Sidebar/Sidebar.js";
 import { TravelMap } from "@/components/Map/TravelMap.js";
+import { ErrorToasts } from "@/components/ErrorToasts.js";
 import type { Place } from "@/types.js";
 
 function PlanTravel() {
@@ -63,8 +64,9 @@ function PlanTravel() {
           if (places.length > 0) {
             addPlace(dayId, places[0]);
           }
-        } catch {
-          // Skip unresolvable places
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          useTravelStore.getState().addError(`Failed to resolve "${placeName}": ${msg}`);
         }
       }
     }
@@ -90,6 +92,7 @@ function PlanTravel() {
       style={{ height: "100%", width: "100%" }}
     >
       <AppLayout sidebar={<Sidebar />} map={<TravelMap apiKey={apiKey} />} />
+      <ErrorToasts />
     </div>
   );
 }

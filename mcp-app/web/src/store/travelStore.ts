@@ -1,6 +1,8 @@
 import { createStore } from "skybridge/web";
 import type { Day, Place, Route, TransportMode } from "../types.js";
 
+export type ErrorNotification = { id: string; message: string };
+
 type TravelState = {
   days: Day[];
   activeDayId: string | null;
@@ -14,6 +16,8 @@ type TravelState = {
   lastAddedPlace: Place | null;
   /** When true, addPlace skips camera animation and route invalidation (bulk resolve in progress). */
   bulkLoading: boolean;
+  /** Error notifications shown as toast popups */
+  errors: ErrorNotification[];
 
   // Actions
   addDay: () => void;
@@ -30,6 +34,8 @@ type TravelState = {
   upsertRoute: (route: Route) => void;
   invalidateRoutes: () => void;
   initDays: (count: number) => void;
+  addError: (message: string) => void;
+  dismissError: (id: string) => void;
 };
 
 const initialDay: Day = { id: "day-1", label: "Day 1", places: [] };
@@ -43,6 +49,7 @@ export const useTravelStore = createStore<TravelState>((set) => ({
   routeVersion: 0,
   lastAddedPlace: null,
   bulkLoading: false,
+  errors: [],
 
   addDay: () =>
     set((s) => {
@@ -165,4 +172,12 @@ export const useTravelStore = createStore<TravelState>((set) => ({
       }));
       return { days, activeDayId: days[0].id, routes: [], routeVersion: 0 };
     }),
+
+  addError: (message) =>
+    set((s) => ({
+      errors: [...s.errors, { id: `err-${Date.now()}`, message }],
+    })),
+
+  dismissError: (id) =>
+    set((s) => ({ errors: s.errors.filter((e) => e.id !== id) })),
 }));
