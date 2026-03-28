@@ -54,11 +54,7 @@ export function SearchResults({ results, onClear }: Props) {
           <span style={{ fontSize: "12px", color: "var(--color-text-secondary)" }}>
             {place.address}
           </span>
-          {place.rating !== undefined && (
-            <span style={{ fontSize: "12px", color: "var(--color-accent)" }}>
-              ★ {place.rating}
-            </span>
-          )}
+
         </button>
       ))}
     </div>

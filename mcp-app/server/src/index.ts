@@ -1,32 +1,32 @@
 import { McpServer } from "skybridge/server";
 import { z } from "zod";
 
-const PYTHON_SERVICE_URL = process.env.PYTHON_SERVICE_URL ?? "http://localhost:8000";
+const PYTHON_SERVICE_URL = process.env.PYTHON_SERVICE_URL ?? "http://localhost:8080";
 const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY ?? "";
-const USE_MOCK = process.env.USE_MOCK === "true" || true; // flip to false when Python service is ready
+const USE_MOCK = process.env.USE_MOCK === "true" || false; // flip to false when Python service is ready
 
 // ─── Mock data ───────────────────────────────────────────────────────────────
-const MOCK_PLACES: Record<string, Array<{ placeId: string; name: string; address: string; lat: number; lng: number; rating: number; photoUrl: string }>> = {
+const MOCK_PLACES: Record<string, Array<{ placeId: string; name: string; address: string; lat: number; lng: number }>> = {
   default: [
-    { placeId: "p1", name: "Sagrada Família", address: "C/ de Mallorca, 401, Barcelona", lat: 41.4036, lng: 2.1744, rating: 4.8, photoUrl: "" },
-    { placeId: "p2", name: "Park Güell", address: "C/ d'Olot, Barcelona", lat: 41.4145, lng: 2.1527, rating: 4.7, photoUrl: "" },
-    { placeId: "p3", name: "La Barceloneta Beach", address: "Barceloneta, Barcelona", lat: 41.3808, lng: 2.1898, rating: 4.5, photoUrl: "" },
-    { placeId: "p4", name: "Gothic Quarter", address: "Barri Gòtic, Barcelona", lat: 41.3833, lng: 2.1762, rating: 4.6, photoUrl: "" },
-    { placeId: "p5", name: "Camp Nou", address: "C/ d'Arístides Maillol, Barcelona", lat: 41.3809, lng: 2.1228, rating: 4.6, photoUrl: "" },
+    { placeId: "p1", name: "Sagrada Família", address: "C/ de Mallorca, 401, Barcelona", lat: 41.4036, lng: 2.1744 },
+    { placeId: "p2", name: "Park Güell", address: "C/ d'Olot, Barcelona", lat: 41.4145, lng: 2.1527 },
+    { placeId: "p3", name: "La Barceloneta Beach", address: "Barceloneta, Barcelona", lat: 41.3808, lng: 2.1898 },
+    { placeId: "p4", name: "Gothic Quarter", address: "Barri Gòtic, Barcelona", lat: 41.3833, lng: 2.1762 },
+    { placeId: "p5", name: "Camp Nou", address: "C/ d'Arístides Maillol, Barcelona", lat: 41.3809, lng: 2.1228 },
   ],
   paris: [
-    { placeId: "pp1", name: "Eiffel Tower", address: "Champ de Mars, 5 Av. Anatole France, Paris", lat: 48.8584, lng: 2.2945, rating: 4.7, photoUrl: "" },
-    { placeId: "pp2", name: "Louvre Museum", address: "Rue de Rivoli, Paris", lat: 48.8606, lng: 2.3376, rating: 4.8, photoUrl: "" },
-    { placeId: "pp3", name: "Notre-Dame Cathedral", address: "6 Parvis Notre-Dame, Paris", lat: 48.8530, lng: 2.3499, rating: 4.7, photoUrl: "" },
-    { placeId: "pp4", name: "Montmartre", address: "Montmartre, Paris", lat: 48.8867, lng: 2.3431, rating: 4.6, photoUrl: "" },
-    { placeId: "pp5", name: "Palace of Versailles", address: "Place d'Armes, Versailles", lat: 48.8049, lng: 2.1204, rating: 4.8, photoUrl: "" },
+    { placeId: "pp1", name: "Eiffel Tower", address: "Champ de Mars, 5 Av. Anatole France, Paris", lat: 48.8584, lng: 2.2945 },
+    { placeId: "pp2", name: "Louvre Museum", address: "Rue de Rivoli, Paris", lat: 48.8606, lng: 2.3376 },
+    { placeId: "pp3", name: "Notre-Dame Cathedral", address: "6 Parvis Notre-Dame, Paris", lat: 48.8530, lng: 2.3499 },
+    { placeId: "pp4", name: "Montmartre", address: "Montmartre, Paris", lat: 48.8867, lng: 2.3431 },
+    { placeId: "pp5", name: "Palace of Versailles", address: "Place d'Armes, Versailles", lat: 48.8049, lng: 2.1204 },
   ],
   rome: [
-    { placeId: "pr1", name: "Colosseum", address: "Piazza del Colosseo, Rome", lat: 41.8902, lng: 12.4922, rating: 4.8, photoUrl: "" },
-    { placeId: "pr2", name: "Vatican Museums", address: "Viale Vaticano, Rome", lat: 41.9065, lng: 12.4536, rating: 4.7, photoUrl: "" },
-    { placeId: "pr3", name: "Trevi Fountain", address: "Piazza di Trevi, Rome", lat: 41.9009, lng: 12.4833, rating: 4.7, photoUrl: "" },
-    { placeId: "pr4", name: "Pantheon", address: "Piazza della Rotonda, Rome", lat: 41.8986, lng: 12.4769, rating: 4.7, photoUrl: "" },
-    { placeId: "pr5", name: "Borghese Gallery", address: "Piazzale Scipione Borghese, Rome", lat: 41.9143, lng: 12.4927, rating: 4.7, photoUrl: "" },
+    { placeId: "pr1", name: "Colosseum", address: "Piazza del Colosseo, Rome", lat: 41.8902, lng: 12.4922 },
+    { placeId: "pr2", name: "Vatican Museums", address: "Viale Vaticano, Rome", lat: 41.9065, lng: 12.4536 },
+    { placeId: "pr3", name: "Trevi Fountain", address: "Piazza di Trevi, Rome", lat: 41.9009, lng: 12.4833 },
+    { placeId: "pr4", name: "Pantheon", address: "Piazza della Rotonda, Rome", lat: 41.8986, lng: 12.4769 },
+    { placeId: "pr5", name: "Borghese Gallery", address: "Piazzale Scipione Borghese, Rome", lat: 41.9143, lng: 12.4927 },
   ],
 };
 
@@ -119,17 +119,18 @@ const server = new McpServer(
         };
       }
       try {
-        const url = `${PYTHON_SERVICE_URL}/search?query=${encodeURIComponent(query)}`;
+        const url = `${PYTHON_SERVICE_URL}/places/?name=${encodeURIComponent(query)}`;
         const res = await fetch(url);
         if (!res.ok) throw new Error(`Python service error: ${res.status}`);
-        const data = await res.json() as { places: unknown[] };
+        const raw = await res.json() as Array<{ name: string; formatted_address: string; lat: number; lng: number; place_id: string }>;
+        const places = raw.map(r => ({ placeId: r.place_id, name: r.name, address: r.formatted_address, lat: r.lat, lng: r.lng }));
         return {
-          structuredContent: data,
-          content: [{ type: "text", text: `Found ${(data.places ?? []).length} places for "${query}".` }],
+          structuredContent: { places },
+          content: [{ type: "text", text: `Found ${places.length} place(s) for "${query}".` }],
         };
       } catch (err) {
         return {
-          content: [{ type: "text", text: `Search failed: ${err}` }],
+          content: [{ type: "text", text: `Search failed: ${err instanceof Error ? err.message : String(err)}` }],
           isError: true,
         };
       }
