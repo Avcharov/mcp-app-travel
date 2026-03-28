@@ -8,6 +8,8 @@ type TravelState = {
   routes: Route[];
   /** Incremented whenever routes need re-fetching (reorder, mode change, cross-day move) */
   routeVersion: number;
+  /** Last place added — used to trigger map camera transition. Not persisted to LLM. */
+  lastAddedPlace: Place | null;
 
   // Actions
   addDay: () => void;
@@ -32,6 +34,7 @@ export const useTravelStore = createStore<TravelState>((set) => ({
   transportMode: "walking",
   routes: [],
   routeVersion: 0,
+  lastAddedPlace: null,
 
   addDay: () =>
     set((s) => {
@@ -58,6 +61,7 @@ export const useTravelStore = createStore<TravelState>((set) => ({
           : d
       ),
       routeVersion: s.routeVersion + 1,
+      lastAddedPlace: place,
     })),
 
   removePlace: (dayId, placeId) =>

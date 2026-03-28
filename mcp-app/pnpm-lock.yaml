@@ -42,6 +42,9 @@ importers:
       '@skybridge/devtools':
         specifier: '>=0.35.10 <1.0.0'
         version: 0.35.13
+      '@types/google.maps':
+        specifier: ^3.58.1
+        version: 3.58.1
       '@types/node':
         specifier: ^25.5.0
         version: 25.5.0

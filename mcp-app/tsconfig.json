@@ -3,7 +3,7 @@
 
   "compilerOptions": {
     "outDir": "dist",
-    "types": ["node", "vite/client"],
+    "types": ["node", "vite/client", "google.maps"],
     "paths": {
       "@/*": ["./web/src/*"]
     }

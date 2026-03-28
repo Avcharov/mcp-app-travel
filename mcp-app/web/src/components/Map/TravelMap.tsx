@@ -4,11 +4,88 @@ import {
   Map,
   AdvancedMarker,
   Pin,
+  useMap,
 } from "@vis.gl/react-google-maps";
 import { useTravelStore } from "@/store/travelStore.js";
 import { useCallTool } from "@/helpers.js";
 import type { Route } from "@/types.js";
 import { RoutePolyline } from "./RoutePolyline.js";
+
+/** Easing function — ease-in-out cubic for natural feel */
+function easeInOutCubic(t: number): number {
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+}
+
+/** Linearly interpolate between two values */
+function lerp(a: number, b: number, t: number): number {
+  return a + (b - a) * t;
+}
+
+/**
+ * Smoothly fly the map camera from current position to a target.
+ * Uses requestAnimationFrame + moveCamera for buttery animation.
+ */
+function flyTo(
+  map: google.maps.Map,
+  target: { lat: number; lng: number; zoom: number },
+  durationMs = 1200,
+): () => void {
+  const startCenter = map.getCenter();
+  const startZoom = map.getZoom() ?? 2;
+  if (!startCenter) {
+    map.moveCamera({ center: target, zoom: target.zoom });
+    return () => {};
+  }
+
+  const startLat = startCenter.lat();
+  const startLng = startCenter.lng();
+  const startTime = performance.now();
+  let rafId = 0;
+
+  function animate(now: number) {
+    const elapsed = now - startTime;
+    const rawT = Math.min(elapsed / durationMs, 1);
+    const t = easeInOutCubic(rawT);
+
+    map.moveCamera({
+      center: { lat: lerp(startLat, target.lat, t), lng: lerp(startLng, target.lng, t) },
+      zoom: lerp(startZoom, target.zoom, t),
+    });
+
+    if (rawT < 1) {
+      rafId = requestAnimationFrame(animate);
+    }
+  }
+
+  rafId = requestAnimationFrame(animate);
+  return () => cancelAnimationFrame(rafId);
+}
+
+/** Sits inside <Map> and smoothly flies the camera to newly added places. */
+function MapCameraController() {
+  const lastAddedPlace = useTravelStore((s) => s.lastAddedPlace);
+  const map = useMap(null);
+  const cancelRef = useRef<(() => void) | undefined>(undefined);
+
+  useEffect(() => {
+    if (!map || !lastAddedPlace) return;
+
+    // Cancel any in-progress animation
+    cancelRef.current?.();
+
+    const targetZoom = Math.max(map.getZoom() ?? 0, 14);
+    cancelRef.current = flyTo(map, {
+      lat: lastAddedPlace.lat,
+      lng: lastAddedPlace.lng,
+      zoom: targetZoom,
+    });
+
+    return () => cancelRef.current?.();
+  }, [lastAddedPlace?.placeId]); // fire only when a different place is added
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+
+  return null;
+}
 
 const DAY_COLORS = ["#1a73e8", "#e8710a", "#1e8e3e", "#a142f4", "#d93025", "#f29900"];
 
@@ -111,6 +188,8 @@ export function TravelMap({ apiKey }: Props) {
         gestureHandling="greedy"
         disableDefaultUI={false}
       >
+        <MapCameraController />
+
         {/* Markers */}
         {allPlaces.map((place, globalIndex) => {
           const color = DAY_COLORS[place.dayIndex % DAY_COLORS.length];
