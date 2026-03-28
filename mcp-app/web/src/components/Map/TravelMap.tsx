@@ -64,25 +64,48 @@ function flyTo(
 /** Sits inside <Map> and smoothly flies the camera to newly added places. */
 function MapCameraController() {
   const lastAddedPlace = useTravelStore((s) => s.lastAddedPlace);
+  const bulkLoading = useTravelStore((s) => s.bulkLoading);
   const map = useMap(null);
   const cancelRef = useRef<(() => void) | undefined>(undefined);
+  const prevBulkRef = useRef(bulkLoading);
 
+  // When bulk loading finishes, fit all markers in view
   useEffect(() => {
-    if (!map || !lastAddedPlace) return;
+    if (prevBulkRef.current && !bulkLoading && map) {
+      const allPlaces = useTravelStore.getState().days.flatMap((d) => d.places);
+      if (allPlaces.length > 0) {
+        const bounds = new google.maps.LatLngBounds();
+        for (const p of allPlaces) bounds.extend({ lat: p.lat, lng: p.lng });
+        map.fitBounds(bounds, { top: 60, right: 60, bottom: 60, left: 60 });
+      }
+    }
+    prevBulkRef.current = bulkLoading;
+  }, [bulkLoading, map]);
 
-    // Cancel any in-progress animation
+  // Normal (non-bulk) per-place camera: fit all markers
+  useEffect(() => {
+    if (!map || !lastAddedPlace || bulkLoading) return;
+
     cancelRef.current?.();
 
-    const targetZoom = Math.max(map.getZoom() ?? 0, 14);
-    cancelRef.current = flyTo(map, {
-      lat: lastAddedPlace.lat,
-      lng: lastAddedPlace.lng,
-      zoom: targetZoom,
-    });
+    const allPlaces = useTravelStore.getState().days.flatMap((d) => d.places);
+    if (allPlaces.length === 0) return;
+
+    if (allPlaces.length === 1) {
+      cancelRef.current = flyTo(map, {
+        lat: lastAddedPlace.lat,
+        lng: lastAddedPlace.lng,
+        zoom: 14,
+      });
+    } else {
+      const bounds = new google.maps.LatLngBounds();
+      for (const p of allPlaces) bounds.extend({ lat: p.lat, lng: p.lng });
+      map.fitBounds(bounds, { top: 60, right: 60, bottom: 60, left: 60 });
+    }
 
     return () => cancelRef.current?.();
-  }, [lastAddedPlace?.placeId]); // fire only when a different place is added
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lastAddedPlace?.placeId]);
 
   return null;
 }

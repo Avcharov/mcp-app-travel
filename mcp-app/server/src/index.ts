@@ -134,17 +134,25 @@ const server = new McpServer(
           .max(30)
           .optional()
           .describe("Number of days to plan for. Defaults to 1."),
+        places: z
+          .array(z.array(z.string()))
+          .optional()
+          .describe(
+            "Places to visit per day. Outer array = days, inner array = place names for that day. " +
+            'Example: [["Eiffel Tower","Louvre Museum"],["Versailles","Montmartre"]]. ' +
+            "Each name will be resolved via search. If provided, its length overrides `days`."
+          ),
       },
       annotations: { readOnlyHint: true },
     },
-    async ({ days }) => {
-      const dayCount = days ?? 1;
+    async ({ days, places }) => {
+      const dayCount = places ? places.length : (days ?? 1);
       return {
-        structuredContent: { days: dayCount },
+        structuredContent: { days: dayCount, places: places ?? null },
         content: [
           {
             type: "text",
-            text: `Opening travel planner for ${dayCount} day${dayCount > 1 ? "s" : ""}.`,
+            text: `Opening travel planner for ${dayCount} day${dayCount > 1 ? "s" : ""}${places ? ` with ${places.flat().length} places to resolve.` : "."}`,
           },
         ],
         _meta: {

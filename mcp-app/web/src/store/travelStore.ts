@@ -12,12 +12,15 @@ type TravelState = {
   routeVersion: number;
   /** Last place added — used to trigger map camera transition. Not persisted to LLM. */
   lastAddedPlace: Place | null;
+  /** When true, addPlace skips camera animation and route invalidation (bulk resolve in progress). */
+  bulkLoading: boolean;
 
   // Actions
   addDay: () => void;
   removeDay: (dayId: string) => void;
   setActiveDay: (dayId: string) => void;
   addPlace: (dayId: string, place: Place) => void;
+  setBulkLoading: (v: boolean) => void;
   removePlace: (dayId: string, placeId: string) => void;
   reorderPlaces: (dayId: string, fromIndex: number, toIndex: number) => void;
   movePlaceBetweenDays: (fromDayId: string, toDayId: string, placeId: string, toIndex: number) => void;
@@ -39,6 +42,7 @@ export const useTravelStore = createStore<TravelState>((set) => ({
   routes: [],
   routeVersion: 0,
   lastAddedPlace: null,
+  bulkLoading: false,
 
   addDay: () =>
     set((s) => {
@@ -73,8 +77,15 @@ export const useTravelStore = createStore<TravelState>((set) => ({
           ? { ...d, places: d.places.some((p) => p.placeId === place.placeId) ? d.places : [...d.places, place] }
           : d
       ),
-      routeVersion: s.routeVersion + 1,
-      lastAddedPlace: place,
+      routeVersion: s.bulkLoading ? s.routeVersion : s.routeVersion + 1,
+      lastAddedPlace: s.bulkLoading ? s.lastAddedPlace : place,
+    })),
+
+  setBulkLoading: (v) =>
+    set((s) => ({
+      bulkLoading: v,
+      // When finishing bulk load, invalidate routes once and clear lastAddedPlace to trigger fitBounds
+      ...(!v ? { routeVersion: s.routeVersion + 1 } : {}),
     })),
 
   removePlace: (dayId, placeId) =>
