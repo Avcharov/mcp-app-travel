@@ -9,5 +9,5 @@ router = APIRouter(
 
 
 @router.get("/")
-async def get_place_by_name(name: str) -> Place:
+async def get_place_by_name(name: str) -> list[Place]:
     return await PlaceSearchService.build().find_the_place(name=name)

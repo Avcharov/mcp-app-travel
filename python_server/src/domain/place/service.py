@@ -15,17 +15,18 @@ class PlaceSearchService:
         self,
         *,
         name: str,
-    ) -> Place:
+    ) -> list[Place]:
         places = await self._google_maps_client.get_places(name=name)
-        first_place = places[0]
 
-        return Place(
-            name=first_place["name"],
-            formatted_address=first_place["formatted_address"],
-            lat=first_place["geometry"]["location"]["lat"],
-            lng=first_place["geometry"]["location"]["lng"],
-            place_id=first_place["place_id"],
-        )
+        return [
+            Place(
+                name=place["name"],
+                formatted_address=place["formatted_address"],
+                lat=place["geometry"]["location"]["lat"],
+                lng=place["geometry"]["location"]["lng"],
+                place_id=place["place_id"],
+            ) for place in places
+        ]
 
     @classmethod
     def build(self) -> PlaceSearchService:
