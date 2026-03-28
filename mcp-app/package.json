@@ -11,7 +11,11 @@
     "deploy": "alpic deploy"
   },
   "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
     "@modelcontextprotocol/sdk": "^1.27.1",
+    "@vis.gl/react-google-maps": "^1.8.1",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "skybridge": ">=0.35.10 <1.0.0",
@@ -20,6 +24,7 @@
   },
   "devDependencies": {
     "@skybridge/devtools": ">=0.35.10 <1.0.0",
+    "@types/node": "^25.5.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",

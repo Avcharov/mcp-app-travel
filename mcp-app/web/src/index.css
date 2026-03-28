@@ -1,154 +1,51 @@
-@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,600&display=swap");
+/* Travel Planner – global styles */
 
-.container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100%;
-  max-height: 100%;
-  overflow: hidden;
-  padding: 1rem;
+:root {
+  --color-bg: #ffffff;
+  --color-bg-secondary: #f5f5f5;
+  --color-surface: #ffffff;
+  --color-border: #e0e0e0;
+  --color-text: #1a1a1a;
+  --color-text-secondary: #666666;
+  --color-primary: #1a73e8;
+  --color-primary-hover: #1558b0;
+  --color-danger: #d93025;
+  --color-accent: #e8710a;
+  --sidebar-width: 360px;
+  --radius: 8px;
+  --radius-sm: 4px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.12),0 1px 2px rgba(0,0,0,0.08);
+}
+
+
+*, *::before, *::after {
   box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
-.ball {
-  background: radial-gradient(
-    circle at 30% 30%,
-    #454565 0%,
-    #1c1c30 40%,
-    #0a0a10 100%
-  );
-  border-radius: 50%;
-  width: 12rem;
-  height: 12rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-family: monospace;
-  text-align: center;
-  position: relative;
-  box-shadow:
-    0 10px 30px rgba(0, 0, 0, 0.5),
-    0 5px 15px rgba(0, 0, 0, 0.3),
-    inset 0 -20px 40px rgba(0, 0, 0, 0.6);
-  animation:
-    float 3s ease-in-out infinite,
-    colorShift 15s ease-in-out infinite;
-  transition: transform 0.3s ease;
+html, body, #root {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 14px;
+  color: var(--color-text);
+  background: var(--color-bg);
+  line-height: 1.5;
+}
+
+button {
   cursor: pointer;
-  border: 1px solid rgba(30, 30, 50, 0.6);
+  border: none;
+  background: none;
+  font: inherit;
+  color: inherit;
 }
 
-.ball:hover {
-  transform: scale(1.05) translateY(-8px);
-  animation: colorShift 15s ease-in-out infinite;
-  box-shadow:
-    0 20px 50px rgba(0, 0, 0, 0.6),
-    0 10px 25px rgba(0, 0, 0, 0.4),
-    inset 0 -20px 40px rgba(0, 0, 0, 0.6);
-}
-
-@keyframes float {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-8px);
-  }
-}
-
-@keyframes colorShift {
-  0%,
-  100% {
-    background: radial-gradient(
-      circle at 30% 30%,
-      #454565 0%,
-      #1c1c30 40%,
-      #0a0a10 100%
-    );
-  }
-  25% {
-    background: radial-gradient(
-      circle at 30% 30%,
-      #3f4a65 0%,
-      #181e30 40%,
-      #090a10 100%
-    );
-  }
-  50% {
-    background: radial-gradient(
-      circle at 30% 30%,
-      #3a5065 0%,
-      #152230 40%,
-      #080a10 100%
-    );
-  }
-  75% {
-    background: radial-gradient(
-      circle at 30% 30%,
-      #3f4a65 0%,
-      #181e30 40%,
-      #090a10 100%
-    );
-  }
-}
-
-.ball::before {
-  content: "";
-  position: absolute;
-  top: 8%;
-  left: 20%;
-  width: 30%;
-  height: 20%;
-  background: radial-gradient(
-    ellipse,
-    rgba(255, 255, 255, 0.3) 0%,
-    transparent 70%
-  );
-  border-radius: 50%;
-  pointer-events: none;
-}
-
-.ball::after {
-  content: "";
-  position: absolute;
-  bottom: 8%;
-  right: 25%;
-  width: 25%;
-  height: 10%;
-  background: radial-gradient(
-    ellipse,
-    rgba(255, 255, 255, 0.1) 0%,
-    transparent 70%
-  );
-  border-radius: 50%;
-  pointer-events: none;
-}
-
-.question {
-  font-size: clamp(0.5rem, 2vw, 0.75rem);
-  color: lightgrey;
-  max-width: 90%;
-  word-wrap: break-word;
-  overflow-wrap: break-word;
-  text-align: center;
-  line-height: 1.3;
-  font-style: italic;
-}
-
-.answer {
-  font-family: "Playfair Display", serif;
-  font-style: italic;
-  font-size: 1.25rem;
-  font-weight: 600;
-  margin-top: 0.5rem;
-  color: #7dd3fc;
-  text-shadow: 0 0 10px rgba(125, 211, 252, 0.5);
-  max-width: 90%;
-  word-wrap: break-word;
-  overflow-wrap: break-word;
-  text-align: center;
-  line-height: 1.3;
+input {
+  font: inherit;
+  color: inherit;
 }
