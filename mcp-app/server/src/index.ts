@@ -6,6 +6,26 @@ const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY ?? "";
 const USE_MOCK = process.env.USE_MOCK === "true" || false; // flip to false when Python service is ready
 
 // ─── Mock data ───────────────────────────────────────────────────────────────
+const MOCK_PREDICTIONS = [
+  {
+    origin: { placeId: "pred1", name: "Sagrada Família", address: "C/ de Mallorca, 401, Barcelona", lat: 41.4036, lng: 2.1744 },
+    destination: { placeId: "pred2", name: "Park Güell", address: "C/ d'Olot, Barcelona", lat: 41.4145, lng: 2.1527 },
+    route: {
+      from: "pred1",
+      to: "pred2",
+      mode: "WALK" as const,
+      polyline: "",
+      distance: "1.8 km",
+      duration: "22 mins",
+    },
+  },
+  {
+    origin: { placeId: "pred3", name: "La Barceloneta Beach", address: "Barceloneta, Barcelona", lat: 41.3808, lng: 2.1898 },
+    destination: null,
+    route: null,
+  },
+];
+
 const MOCK_PLACES: Record<string, Array<{ placeId: string; name: string; address: string; lat: number; lng: number }>> = {
   default: [
     { placeId: "p1", name: "Sagrada Família", address: "C/ de Mallorca, 401, Barcelona", lat: 41.4036, lng: 2.1744 },
@@ -270,6 +290,107 @@ const server = new McpServer(
       } catch (err) {
         return {
           content: [{ type: "text", text: `Directions failed: ${err}` }],
+          isError: true,
+        };
+      }
+    },
+  )
+
+  // ─── Tool: predict-places ──────────────────────────────────────────────────
+  .registerTool(
+    "predict-places",
+    {
+      description:
+        "APP-ONLY — this tool is called by the app UI, not directly by the LLM. " +
+        "Upload images (e.g. travel brochures, screenshots) and predict places and routes from them. " +
+        "Returns a list of predicted origin/destination pairs with optional routes.",
+      inputSchema: {
+        images: z.array(z.string()).describe("Array of base64-encoded image strings (without data-URI prefix)."),
+      },
+      annotations: { readOnlyHint: true },
+    },
+    async ({ images }) => {
+      if (USE_MOCK) {
+        // Generate polylines for mock predictions that have routes
+        const predictions = MOCK_PREDICTIONS.map((p) => {
+          if (p.route && p.origin && p.destination) {
+            const dirs = getMockDirections(p.origin.lat, p.origin.lng, p.destination.lat, p.destination.lng, p.route.mode);
+            return { ...p, route: { ...p.route, polyline: dirs.polyline, distance: dirs.distance, duration: dirs.duration } };
+          }
+          return p;
+        });
+        return {
+          structuredContent: { predictions },
+          content: [{ type: "text" as const, text: `[MOCK] Predicted ${predictions.length} place(s) from ${images.length} image(s).` }],
+        };
+      }
+      try {
+        // Build multipart form data — each image becomes a file part
+        const formData = new FormData();
+        for (const base64Img of images) {
+          const buffer = Buffer.from(base64Img, "base64");
+          const blob = new Blob([buffer], { type: "image/jpeg" });
+          formData.append("files", blob, "image.jpg");
+        }
+
+        const res = await fetch(`${PYTHON_SERVICE_URL}/places/predict/`, {
+          method: "POST",
+          body: formData,
+        });
+        if (!res.ok) throw new Error(`Python service error: ${res.status}`);
+
+        const raw = await res.json() as Array<{
+          origin: { name: string; formatted_address: string; lat: number; lng: number; place_id: string };
+          destination?: { name: string; formatted_address: string; lat: number; lng: number; place_id: string } | null;
+          route?: {
+            polyline: string | { encodedPolyline: string };
+            distance: string | { text: string };
+            duration: string | { text: string };
+            travel_mode?: string;
+          } | null;
+        }>;
+
+        const predictions = raw.map((item) => {
+          const origin = {
+            placeId: item.origin.place_id,
+            name: item.origin.name,
+            address: item.origin.formatted_address,
+            lat: item.origin.lat,
+            lng: item.origin.lng,
+          };
+
+          const destination = item.destination ? {
+            placeId: item.destination.place_id,
+            name: item.destination.name,
+            address: item.destination.formatted_address,
+            lat: item.destination.lat,
+            lng: item.destination.lng,
+          } : null;
+
+          let route = null;
+          if (item.route && destination) {
+            const polylineRaw = item.route.polyline;
+            const polyline = typeof polylineRaw === "string"
+              ? polylineRaw
+              : (polylineRaw?.encodedPolyline ?? "");
+            const distRaw = item.route.distance;
+            const distance = typeof distRaw === "string" ? distRaw : (distRaw?.text ?? "");
+            const durRaw = item.route.duration;
+            const duration = typeof durRaw === "string" ? durRaw : (durRaw?.text ?? "");
+            const mode = (item.route.travel_mode as "DRIVE" | "WALK" | "TRANSIT" | "BICYCLE" | "TWO_WHEELER") ?? "DRIVE";
+            route = { from: origin.placeId, to: destination.placeId, mode, polyline, distance, duration };
+          }
+
+          return { origin, destination, route };
+        });
+
+        return {
+          structuredContent: { predictions },
+          content: [{ type: "text" as const, text: `Predicted ${predictions.length} place(s) from ${images.length} image(s).` }],
+        };
+      } catch (err) {
+        return {
+          content: [{ type: "text" as const, text: `Prediction failed: ${err instanceof Error ? err.message : String(err)}` }],
           isError: true,
         };
       }

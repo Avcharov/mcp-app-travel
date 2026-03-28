@@ -11,6 +11,7 @@ import { useDisplayMode } from "skybridge/web";
 import { useTravelStore } from "@/store/travelStore.js";
 import { SearchBar } from "./SearchBar.js";
 import { SearchResults } from "./SearchResults.js";
+import { ImagePredict } from "./ImagePredict.js";
 import { DayPlan } from "./DayPlan.js";
 import type { Place } from "@/types.js";
 
@@ -117,6 +118,7 @@ export function Sidebar() {
             </svg>
           )}
         </button>
+        <ImagePredict />
       </div>
 
       {/* Day pills */}

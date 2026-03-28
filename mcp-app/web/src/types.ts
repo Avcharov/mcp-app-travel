@@ -27,3 +27,9 @@ export interface Route {
   duration: string;
   distance: string;
 }
+
+export interface PredictionResult {
+  origin: Place;
+  destination: Place | null;
+  route: Route | null;
+}
