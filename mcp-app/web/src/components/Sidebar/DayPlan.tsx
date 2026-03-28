@@ -40,7 +40,7 @@ export function DayPlan({ day, colorIndex }: Props) {
         {day.places.length === 0 && (
           <div
             style={{
-              padding: "16px 8px",
+              padding: "20px 8px",
               textAlign: "center",
               color: "var(--color-text-secondary)",
               fontSize: "12px",
@@ -49,7 +49,9 @@ export function DayPlan({ day, colorIndex }: Props) {
               margin: "4px 0",
             }}
           >
-            Search and click places to add them here
+            <div style={{ fontSize: "22px", marginBottom: "6px" }}>📍</div>
+            <div style={{ fontWeight: 500, marginBottom: "2px" }}>No places yet</div>
+            <div style={{ opacity: 0.7 }}>Use the search bar above to find and add places</div>
           </div>
         )}
       </div>

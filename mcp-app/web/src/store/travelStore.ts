@@ -45,7 +45,9 @@ export const useTravelStore = createStore<TravelState>((set) => ({
 
   removeDay: (dayId) =>
     set((s) => {
-      const days = s.days.filter((d) => d.id !== dayId);
+      const filtered = s.days.filter((d) => d.id !== dayId);
+      // Re-label all days sequentially so gaps are closed (Day 1, Day 2, …)
+      const days = filtered.map((d, i) => ({ ...d, label: `Day ${i + 1}` }));
       const activeDayId =
         s.activeDayId === dayId ? (days[0]?.id ?? null) : s.activeDayId;
       return { days, activeDayId };
