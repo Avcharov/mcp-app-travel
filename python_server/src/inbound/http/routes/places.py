@@ -1,8 +1,8 @@
 from typing import Any
 
-from fastapi import APIRouter
+from fastapi import APIRouter, UploadFile
 
-from domain.place.models import Place
+from domain.place.models import OriginDestinationRoute, Place
 from domain.place.service import PlacesService
 from inbound.http.routes.models import ComputeRouteRequestContract
 
@@ -23,3 +23,11 @@ async def compute_route(origin_destination: ComputeRouteRequestContract) -> list
         destination_place_id=origin_destination.destination_place_id,
         travel_mode=origin_destination.travel_mode,
     )
+
+
+@router.get("/predict")
+async def predict_places_by_images(files: list[UploadFile]) -> list[OriginDestinationRoute]:
+    images = []
+    for file in files:
+        images.append(await file.read())
+    return await PlacesService.build().predict_places_by_image(images=images)

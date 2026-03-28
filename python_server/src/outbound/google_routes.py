@@ -19,7 +19,7 @@ class GoogleRoutesClient:
 
         if not (session := manager.get(http_session_name)):
             self._session = ClientSession(
-                # base_url="https://routes.googleapis.com/directions/",
+                base_url="https://routes.googleapis.com/directions/",
             )
             manager.add(http_session_name, self._session)
         else:
@@ -32,7 +32,7 @@ class GoogleRoutesClient:
         travel_mode: str,
     ) -> dict[str, Any]:
         response = await self._request(
-            url="https://routes.googleapis.com/directions/v2:computeRoutes",
+            url="v2:computeRoutes",
             method="POST",
             body={
                 "origin": {

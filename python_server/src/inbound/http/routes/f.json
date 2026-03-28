@@ -1,0 +1,8 @@
+[
+  {
+    "origin": Place,
+    "destination": Place | None,
+    "route": Route | None
+  },
+  ...
+]
