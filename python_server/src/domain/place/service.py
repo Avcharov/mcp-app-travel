@@ -61,9 +61,11 @@ class PlacesService:
     ) -> list[OriginDestinationRoute]:
         place_names = set()
         for image in images:
+            logger.info(f"Predicting place name")
             predicted_place = await self._location_guesser_client.predict(image=image)
             place_names.add(f'{predicted_place["country"]}, {predicted_place["city"]}')
-        logger.info(place_names)
+            logger.info(f"Received {predicted_place["country"]}, {predicted_place["city"]}")
+        logger.info(f"finding places by names")
         place_information = [(await self.find_the_place(name=name))[0] for name in place_names]
 
         if len(place_information) == 1:
@@ -76,6 +78,7 @@ class PlacesService:
             ]
 
         routes = []
+        logger.info(f"Building routes")
         for origin, destination in pairwise(place_information):
             routes.append(
                 OriginDestinationRoute(
